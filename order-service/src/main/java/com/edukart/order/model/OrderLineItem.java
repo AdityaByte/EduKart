@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @Table(name = "order_line_item")
 public class OrderLineItem {
     @Id
-    private String id;
+    private String orderId;
     private String skuCode;
     private BigDecimal price;
 }

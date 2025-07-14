@@ -1,8 +1,7 @@
 package com.edukart.order.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.edukart.order.enums.OrderStatus;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,10 +14,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "order")
+@Table(name = "order_table")
 public class Order {
     @Id
     private String id;
     private String orderNumber;
+    @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItemList;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus orderStatus;
 }

@@ -3,6 +3,7 @@ package com.edukart.order;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
 
@@ -15,5 +16,10 @@ public class OrderServiceApplication {
     @Bean
     public SecureRandom secureRandom() {
         return new SecureRandom();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
