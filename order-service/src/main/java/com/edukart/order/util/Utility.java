@@ -14,4 +14,8 @@ public class Utility {
     public String generateOrderNumber() {
         return "order" + secureRandom.nextInt(10000);
     }
+
+    public String generateOrderId() {
+        return "oid" + secureRandom.nextInt(9999);
+    }
 }

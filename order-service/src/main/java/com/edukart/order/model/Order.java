@@ -17,7 +17,7 @@ import java.util.List;
 @Table(name = "order_table")
 public class Order {
     @Id
-    private String id;
+    private String orderId;
     private String orderNumber;
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItemList;

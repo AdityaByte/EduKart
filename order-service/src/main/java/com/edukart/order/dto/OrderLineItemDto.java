@@ -13,6 +13,5 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class OrderLineItemDto {
     private String orderId;
-    private String skuCode;
-    private BigDecimal price;
+    private String skuCode; // This could be the productId.
 }
