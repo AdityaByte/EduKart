@@ -1,4 +1,4 @@
-package com.service.discovery;
+package com.edukart.discovery;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

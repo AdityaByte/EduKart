@@ -39,7 +39,7 @@ public class OrderService {
             // Need to check the OrderListItems is in the stock or not.
             // Request synchronous request product service.
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                    .fromUriString("http://localhost:8080/api/product/ids");
+                    .fromUriString("http://product-service/api/product/ids");
 
             orderRequest.getOrderLineItemDtoList()
                     .stream()
