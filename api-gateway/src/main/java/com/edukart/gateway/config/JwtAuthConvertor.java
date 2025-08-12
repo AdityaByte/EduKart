@@ -4,13 +4,13 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+// This is the Bridge in between the KeyCloak and the Spring security.
+// This class is mainly used for extracting the realm roles of the user.
 
 public class JwtAuthConvertor implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override

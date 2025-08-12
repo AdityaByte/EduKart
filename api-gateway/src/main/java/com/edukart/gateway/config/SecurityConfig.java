@@ -26,8 +26,8 @@ public class SecurityConfig {
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/eureka/**") // Through this route we load the static files so permitting it without authorization.
                         .permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/product").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/product").hasRole("CUSTOMER")
+                        .pathMatchers(HttpMethod.GET, "/api/product").permitAll() // Products can be displayed without authentication.
+                        .pathMatchers(HttpMethod.POST, "/api/product").hasRole("SELLER") // For adding a product person should be a seller.
                         .anyExchange()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
