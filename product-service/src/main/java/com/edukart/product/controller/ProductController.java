@@ -5,7 +5,10 @@ import com.edukart.product.dto.ProductResponse;
 import com.edukart.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,12 +19,14 @@ public class ProductController {
 
     private final ProductService service;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @ResponseBody
-    public String addProducts(@RequestBody List<ProductRequest> productRequests) {
-        service.addProducts(productRequests);
-        return "Products inserted successfully";
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> addProduct(
+            @RequestPart("product")
+            ProductRequest product,
+            @RequestPart("file")
+            MultipartFile file
+    ) {
+        return service.addProduct(product, file);
     }
 
     @GetMapping

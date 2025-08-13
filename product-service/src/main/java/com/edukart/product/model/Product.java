@@ -25,4 +25,5 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductCategory category;
     private BigDecimal price;
+    private String filename;
 }

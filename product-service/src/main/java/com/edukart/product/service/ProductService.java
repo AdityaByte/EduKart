@@ -7,19 +7,78 @@ import com.edukart.product.exceptions.ProductNotAvailableException;
 import com.edukart.product.model.Product;
 import com.edukart.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductService {
 
     private final ProductRepository repository;
+    private final RestTemplate restTemplate;
+    @Value("${supabase.api.url}")
+    private String API_URL;
+    @Value("${supabase.api.servicekey}")
+    private String API_SERVICE_KEY;
+    @Value("${supabase.api.bucketname}")
+    private String BUCKET_NAME;
+
+    public ResponseEntity<String> addProduct(ProductRequest productRequest, MultipartFile file) {
+        try {
+            Product product = Product
+                    .builder()
+                    .productId(UUID.randomUUID().toString())
+                    .name(productRequest.getName())
+                    .description(productRequest.getDescription())
+                    .price(productRequest.getPrice())
+                    .category(ProductCategory.valueOf(productRequest.getCategory()))
+                    .filename(file.getOriginalFilename())
+                    .build();
+
+            // Since we have to make a POST request to the Supabase Database for storing the file.
+            ResponseEntity<String> responseFromSupabase = saveFileToSupabase(file);
+            if (responseFromSupabase.getStatusCode().is2xxSuccessful()) {
+                // If the file is successfully saved to the db
+                // Then we have to save the metadata of the file too
+                repository.save(product);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body("Product saved successfully");
+            }
+
+            return responseFromSupabase;
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw new RuntimeException("Failed to add product! Try again later.");
+        }
+    }
+
+    private ResponseEntity<String> saveFileToSupabase(MultipartFile file) throws IOException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", API_SERVICE_KEY);
+        headers.set("Authorization", "Bearer " + API_SERVICE_KEY);
+        headers.setContentType(MediaType.parseMediaType(file.getContentType()));
+
+        HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                API_URL + "/storage/v1/object/" + BUCKET_NAME + "/" + file.getOriginalFilename(),
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
+
+        return response;
+    }
 
     public void addProducts(List<ProductRequest> productRequestList) {
         List<Product> productList = productRequestList.stream()
