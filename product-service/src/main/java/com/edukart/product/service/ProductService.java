@@ -3,11 +3,13 @@ package com.edukart.product.service;
 import com.edukart.product.dto.ProductRequest;
 import com.edukart.product.dto.ProductResponse;
 import com.edukart.product.enums.ProductCategory;
+import com.edukart.product.exceptions.FailedToDeleteFileException;
 import com.edukart.product.exceptions.ProductNotAvailableException;
 import com.edukart.product.model.Product;
 import com.edukart.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -80,20 +82,6 @@ public class ProductService {
         return response;
     }
 
-    public void addProducts(List<ProductRequest> productRequestList) {
-        List<Product> productList = productRequestList.stream()
-                .map((product) ->
-                    Product.builder()
-                            .productId(UUID.randomUUID().toString())
-                            .name(product.getName())
-                            .description(product.getDescription())
-                            .category(ProductCategory.valueOf(product.getCategory()))
-                            .price(product.getPrice())
-                            .build())
-                .toList();
-        repository.saveAll(productList);
-    }
-
     public List<ProductResponse> getProducts() {
         List<Product> products = repository.findAll();
         if (products.isEmpty()) {
@@ -143,7 +131,32 @@ public class ProductService {
     }
 
     public void deleteProduct(String id) {
-        repository.deleteById(id);
+        // Firstly we need to fetch the product via the productId
+        Optional<String> filename = repository.findById(id)
+                .map(product -> Optional.of(product.getFilename()))
+                .orElse(Optional.empty());
+
+        filename.ifPresent(fn -> {
+            // If the filename exists like we fetched out the file in that case we need to send the delete request
+            // to the supabase database
+            ResponseEntity<Void> deleteRequestRespose = deleteFileFromStorage(fn);
+            if (deleteRequestRespose.getStatusCode().is2xxSuccessful()) {
+                repository.deleteById(id);
+            } else {
+                throw new FailedToDeleteFileException("Failed to delete the file from the database");
+            }
+        });
+    }
+
+    private ResponseEntity<Void> deleteFileFromStorage(String filename) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", API_SERVICE_KEY);
+        headers.set("Authorization", "Bearer " + API_SERVICE_KEY);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String url = String.format("%s/storage/v1/object/%s/%s", API_URL, BUCKET_NAME, filename);
+
+        return restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class);
     }
 
     private List<ProductResponse> mapToProductResponse(List<Product> products) {

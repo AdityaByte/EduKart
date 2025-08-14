@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/product").permitAll() // Products can be displayed without authentication.
                         .pathMatchers(HttpMethod.POST, "/api/product").hasRole("SELLER") // For adding a product person should be a seller.
+                        .pathMatchers(HttpMethod.DELETE, "/api/product").hasRole("SELLER") // For deleting a product person should be a seller.
                         .anyExchange()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2

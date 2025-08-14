@@ -56,7 +56,7 @@ public class ProductController {
     @ResponseBody
     public String deleteProduct(@RequestParam("productId") String id) {
         service.deleteProduct(id);
-        return "Product has been deleted..";
+        return "Product has been deleted";
     }
 
 }

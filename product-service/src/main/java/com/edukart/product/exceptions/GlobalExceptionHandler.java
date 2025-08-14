@@ -23,4 +23,11 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ex.getMessage());
     }
+
+    @ExceptionHandler(FailedToDeleteFileException.class)
+    public ResponseEntity<String> handleFailedToDeleteFileException(FailedToDeleteFileException ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ex.getMessage());
+    }
 }
