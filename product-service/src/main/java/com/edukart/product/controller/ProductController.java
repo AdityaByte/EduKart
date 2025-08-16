@@ -38,8 +38,8 @@ public class ProductController {
     @GetMapping("/ids")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductResponse> getProducts(@RequestParam("productId") List<String> productIds) {
-        return service.getProductByIds(productIds);
+    public List<ProductResponse> getProducts(@RequestParam("skuCode") List<String> skuCodes) {
+        return service.getProductByIds(skuCodes);
     }
 
 

@@ -9,8 +9,9 @@ import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class OrderRequest {
-    private String skuCode; // This would be the product ID unique ID associated with each product.
+@NoArgsConstructor
+public class CartRequest {
+    private String orderId;
+    private List<ItemRequest> items;
 }

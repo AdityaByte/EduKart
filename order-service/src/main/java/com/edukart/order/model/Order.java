@@ -18,7 +18,6 @@ import java.util.List;
 public class Order {
     @Id
     private String orderId;
-    private String orderNumber;
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItem> orderLineItemList;
     @Enumerated(EnumType.STRING)

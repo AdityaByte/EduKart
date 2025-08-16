@@ -9,7 +9,6 @@ import com.edukart.product.model.Product;
 import com.edukart.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -98,17 +97,17 @@ public class ProductService {
                 .toList();
     }
 
-    public List<ProductResponse> getProductByIds(List<String> productIds) {
-        List<Product> foundProducts = repository.findByProductIdIn(productIds);
+    public List<ProductResponse> getProductByIds(List<String> skuCodes) {
+        List<Product> foundProducts = repository.findByProductIdIn(skuCodes);
 
-        if (foundProducts.size() != productIds.size()) {
+        if (foundProducts.size() != skuCodes.size()) {
             // Using set so that no duplicate id should be present.
             Set<String> foundIds = foundProducts
                     .stream()
                     .map(Product::getProductId)
                     .collect(Collectors.toSet());
 
-            List<String> missingIds = productIds
+            List<String> missingIds = skuCodes
                     .stream()
                     .filter(id -> !foundIds.contains(id))
                     .toList();

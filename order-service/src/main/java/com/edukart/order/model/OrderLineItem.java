@@ -20,5 +20,6 @@ public class OrderLineItem {
     @Id
     private String orderId;
     private String skuCode;
+    private String name;
     private BigDecimal price;
 }

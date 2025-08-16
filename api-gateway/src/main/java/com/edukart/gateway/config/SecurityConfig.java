@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/eureka/**") // Through this route we load the static files so permitting it without authorization.
                         .permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/order").hasRole("CUSTOMER")
                         .pathMatchers(HttpMethod.GET, "/api/product").permitAll() // Products can be displayed without authentication.
                         .pathMatchers(HttpMethod.POST, "/api/product").hasRole("SELLER") // For adding a product person should be a seller.
                         .pathMatchers(HttpMethod.DELETE, "/api/product").hasRole("SELLER") // For deleting a product person should be a seller.
@@ -36,7 +37,6 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
     }
-
 
     @Bean
     public ReactiveJwtAuthenticationConverter jwtAuthenticationConverter() {

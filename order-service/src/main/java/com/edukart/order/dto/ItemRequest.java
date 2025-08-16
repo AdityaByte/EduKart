@@ -5,12 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderRequest {
-    private String skuCode; // This would be the product ID unique ID associated with each product.
+public class ItemRequest {
+    private String id;
+    private String name;
+    private Long amount;
+    private Long quantity;
 }

@@ -1,5 +1,7 @@
 package com.edukart.order.service;
 
+import com.edukart.order.dto.CartRequest;
+import com.edukart.order.dto.ItemRequest;
 import com.edukart.order.dto.OrderRequest;
 import com.edukart.order.dto.ProductResponse;
 import com.edukart.order.enums.OrderStatus;
@@ -28,63 +30,91 @@ import java.util.UUID;
 public class OrderService {
 
     private final Utility utility;
-
     private final RestTemplate restTemplate;
-
     private final OrderRepository orderRepository;
 
-    public void placeOrder(OrderRequest orderRequest) {
-        try {
+    public String placeOrder(List<OrderRequest> orderRequests, String email) {
 
-            // Need to check the OrderListItems is in the stock or not.
-            // Request synchronous request product service.
-            UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                    .fromUriString("http://product-service/api/product/ids");
+        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder
+                .fromUriString("http://product-service/api/product/ids");
 
-            orderRequest.getOrderLineItemDtoList()
-                    .stream()
-                    .filter(item -> !item.getSkuCode().isEmpty())
-                    .forEach(item -> uriBuilder.queryParam("productId", item.getSkuCode()));
+        orderRequests.stream()
+                .filter(orderRequest -> !orderRequest.getSkuCode().isEmpty())
+                .forEach(item -> uriComponentsBuilder.queryParam("skuCode", item.getSkuCode()));
 
-            URI uri = uriBuilder.build().toUri();
+        URI uri = uriComponentsBuilder.build().toUri();
 
-            ResponseEntity<List<ProductResponse>> response = restTemplate.exchange(
-                    uri,
-                    HttpMethod.GET,
-                    HttpEntity.EMPTY,
-                    // To fetch a list of object we use the ParametrizedTypeReference
-                    new ParameterizedTypeReference<List<ProductResponse>>() {
-                    }
-            );
+        ResponseEntity<List<ProductResponse>> response = restTemplate.exchange(
+                uri,
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                new ParameterizedTypeReference<List<ProductResponse>>() {
+                }
+        );
 
-            if (response.getStatusCode() != HttpStatus.OK) {
-                throw new ProductNotAvailableException(Objects.requireNonNull(response.getBody()).toString());
-            }
-
-            List<OrderLineItem> orderLineItemList = mapToOrderLineItem(Objects.requireNonNull(response.getBody()));
-            Order order = Order.builder()
-                    .orderId(UUID.randomUUID().toString())
-                    .orderNumber(utility.generateOrderNumber())
-                    .orderLineItemList(orderLineItemList)
-                    .orderStatus(OrderStatus.PENDING)
-                    .build();
-
-            // There could be the payment gateway step.
-            log.info("Payment has been done successfully");
-
-            // Here we trigger an event to the notification service for sending that the order is been placed.
-            log.info("Notification has been sent to the user email");
-
-            order.setOrderStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
-
-        } catch (HttpClientErrorException ex) {
-            if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new ProductNotAvailableException(ex.getResponseBodyAsString());
-            }
-            throw new RuntimeException(ex.getMessage());
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new ProductNotAvailableException(Objects.requireNonNull(response.getBody().toString()));
         }
+
+        List<OrderLineItem> orderLineItemList = mapToOrderLineItem(Objects.requireNonNull(response.getBody()));
+        Order order = Order.builder()
+                .orderId(utility.generateOrderId())
+                .orderLineItemList(orderLineItemList)
+                .orderStatus(OrderStatus.PENDING)
+                .build();
+
+        // When we get the order we need to send the request to the payment-service.
+        String sessionURL = makePaymentRequest(order);
+        if (sessionURL.isEmpty()) {
+            return null;
+        }
+
+        // Else we need to forward the URL to client.
+        return sessionURL;
     }
+
+    // Payment request must be synchronous.
+    private String makePaymentRequest(Order order) {
+        CartRequest cartRequest = mapToCartRequest(order);
+        // Now I have to send the request to the payment service
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<CartRequest> entity = new HttpEntity<>(cartRequest, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "http://payment-gateway/api/payment",
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.error("Payment gateway response message: {}", response.getBody());
+            return null;
+        }
+        return response.getBody();
+    }
+
+    private CartRequest mapToCartRequest(Order order){
+        return CartRequest
+                .builder()
+                .orderId(order.getOrderId())
+                .items(order.getOrderLineItemList()
+                        .stream()
+                        .map(orderLineItem -> ItemRequest
+                                .builder()
+                                .id(orderLineItem.getSkuCode())
+                                .name(orderLineItem.getName())
+                                .amount(orderLineItem.getPrice().longValueExact())
+                                .quantity(1L)
+                                .build()
+                        )
+                        .toList()
+                ).build();
+    }
+
+
 
     private List<OrderLineItem> mapToOrderLineItem(List<ProductResponse> productResponses) {
         return productResponses
@@ -93,6 +123,7 @@ public class OrderService {
                         .builder()
                         .orderId(utility.generateOrderId())
                         .skuCode(productResponse.getProductId())
+                        .name(productResponse.getName())
                         .price(productResponse.getPrice())
                         .build())
                 .toList();
