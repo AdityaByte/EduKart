@@ -1,17 +1,17 @@
-package com.edukart.order.dto;
+package com.edukart.payment.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class OrderLineItemDto {
+@NoArgsConstructor
+public class Cart {
     private String orderId;
-    private String skuCode; // This could be the productId.
+    private List<Item> items;
 }
