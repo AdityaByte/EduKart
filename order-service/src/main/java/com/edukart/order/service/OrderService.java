@@ -5,6 +5,7 @@ import com.edukart.order.dto.ItemRequest;
 import com.edukart.order.dto.OrderRequest;
 import com.edukart.order.dto.ProductResponse;
 import com.edukart.order.enums.OrderStatus;
+import com.edukart.order.event.Message;
 import com.edukart.order.exceptions.ProductNotAvailableException;
 import com.edukart.order.model.Order;
 import com.edukart.order.model.OrderLineItem;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -32,6 +34,7 @@ public class OrderService {
     private final Utility utility;
     private final RestTemplate restTemplate;
     private final OrderRepository orderRepository;
+    private final KafkaTemplate<String, Message> kafkaTemplate;
 
     public String placeOrder(List<OrderRequest> orderRequests, String email) {
 
@@ -68,6 +71,12 @@ public class OrderService {
         if (sessionURL.isEmpty()) {
             return null;
         }
+
+        kafkaTemplate.send("notification.message", Message.builder()
+                        .destination(email)
+                        .subject("Make Payment to the URL")
+                        .message(String.format("Open this URL and make payment:\n%s\nWith Regards - EduKart", sessionURL))
+                        .build());
 
         // Else we need to forward the URL to client.
         return sessionURL;

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PaymentService {
@@ -42,9 +43,10 @@ public class PaymentService {
 
         SessionCreateParams params = SessionCreateParams
                 .builder()
+                .putAllMetadata(Map.of("orderId", cart.getOrderId()))
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://product-service/payment/success")
-                .setCancelUrl("http://product-service/payment/cancel")
+                .setSuccessUrl("http://localhost:8080/payment/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl("http://localhost:8080/payment/cancel")
                 .addAllLineItem(lineItems)
                 .build();
 

@@ -19,7 +19,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<String> placeOrder(
             @RequestBody List<OrderRequest> orderRequests,
-            @RequestHeader("User-Email") String email
+            @RequestHeader("email") String email
             ) {
         System.out.println("User-Email is: " + email);
         String response = orderService.placeOrder(orderRequests, email);
