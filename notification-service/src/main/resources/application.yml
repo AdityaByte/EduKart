@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: notification-service
+
+  # Java Mail API configs
+#  mail:
+#    host: smtp.gmail.com
+#    port: 465
+#    username: ${MAIL_USERNAME}
+#    password: ${MAIL_PASSWORD}
+#    protocol: smtp
+#    properties:
+#      mail:
+#        smtp:
+#          auth: true
+#          ssl:
+#            enable: true
+#            trust: smtp.gmail.com
+
+  # Kafka properties.
+  kafka:
+    bootstrap-servers:
+      - localhost:9092
+    template:
+      default-topic: notification.message
+    consumer:
+      group-id: notificationId
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            type:
+              mapping: event:com.edukart.notification.dto.Message
+
+server:
+  port: 0
+
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761
