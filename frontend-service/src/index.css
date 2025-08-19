@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+@layer base {
+
+  /* Light mode variables */
+  [data-theme="light"] {
+    --background-color: #ffffff;
+    --foreground-color: #1a202c;
+    --primary-text-color: #1a202c;
+    --secondary-text-color: #4a5568;
+    --toggle-bg: #e2e8f0;
+    --toggle-fg: #4299e1;
+    --navbar-bg: #f8fafc;
+    --navbar-fg: #1a202c;
+  }
+
+  /* Dark mode variables */
+  [data-theme="dark"] {
+    --background-color: #0a0a0a;
+    --foreground-color: #567aff;
+    --primary-text-color: #f6f6f6;
+    --secondary-text-color: #fcecec;
+    --toggle-bg: #283452;
+    --toggle-fg: #006aff;
+    --navbar-bg: #111827;
+    --navbar-fg: #f6f6f6;
+  }
+}
