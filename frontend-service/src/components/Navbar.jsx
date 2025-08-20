@@ -42,7 +42,7 @@ const Navbar = () => {
 
       {/* Center: Logo */}
       <div>
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent cursor-pointer">
+        <h1 className="text-2xl font-bold bg-clip-text cursor-pointer">
           EduKart.
         </h1>
       </div>
