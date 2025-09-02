@@ -24,8 +24,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="flex items-center justify-between px-8 py-4 bg-[var(--navbar-bg)] text-[var(--navbar-fg)] w-full fixed top-0 shadow-md z-50">
-      {/* Left: Nav Items */}
+    <nav className="flex items-center justify-between px-8 py-4 bg-[var(--navbar-bg)]/40 backdrop-blur text-[var(--navbar-fg)] w-full fixed top-0 shadow-md z-50">
+
       <div className="flex gap-8 items-center justify-center w-[20%]">
         {nav_items.map((item, index) => (
           <a
@@ -40,18 +40,16 @@ const Navbar = () => {
         ))}
       </div>
 
-      {/* Center: Logo */}
       <div>
         <h1 className="text-2xl font-bold bg-clip-text cursor-pointer">
           EduKart.
         </h1>
       </div>
 
-      {/* Right: Icons + Toggle */}
       <div className="flex items-center gap-6 w-[20%] justify-center">
         <button
           onClick={toggleTheme}
-          className="px-3 py-2 rounded-lg bg-[var(--toggle-bg)] text-[var(--toggle-fg)] font-medium shadow hover:scale-105 transition"
+          className="px-3 py-2 rounded-lg bg-[var(--toggle-bg)]/30 backdrop-blur text-[var(--toggle-fg)] font-medium shadow hover:scale-105 transition"
         >
           {theme === "light" ? "🌙" : "☀️"}
         </button>

@@ -10,7 +10,7 @@ const Tag = ({ text }) => {
         py-2
         text-sm
         font-medium
-        text-[var(--primary-text-color)]
+        text-white
         bg-[var(--foreground-color)]
         shadow-md
         hover:shadow-lg

@@ -9,7 +9,7 @@ const ProductSection = () => {
       description: "Organize your notes efficiently and boost productivity.",
       price: 29.99,
       badge: "Best Seller",
-      image: "https://via.placeholder.com/400x300?text=Smart+Notebook"
+      image: null
     },
     {
       id: 2,
@@ -17,7 +17,7 @@ const ProductSection = () => {
       description: "Improve learning speed and retention with AI assistance.",
       price: 49.99,
       badge: "New",
-      image: "https://via.placeholder.com/400x300?text=AI+Learning+Tool"
+      image: null
     },
     {
       id: 3,
@@ -25,7 +25,7 @@ const ProductSection = () => {
       description: "Ready-to-use templates for your assignments and projects.",
       price: 19.99,
       badge: "Hot",
-      image: "https://via.placeholder.com/400x300?text=Project+Templates"
+      image: null
     },
     {
       id: 4,
@@ -33,7 +33,7 @@ const ProductSection = () => {
       description: "Unlimited access to curated digital study materials.",
       price: 39.99,
       badge: "Popular",
-      image: "https://via.placeholder.com/400x300?text=E-Library+Access"
+      image: null
     }
   ];
 
@@ -47,7 +47,6 @@ const ProductSection = () => {
           Bringing you the best, so you can focus on what matters.
         </p>
 
-        {/* Product Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
           {products.map(product => (
             <ProductCard
@@ -60,6 +59,7 @@ const ProductSection = () => {
             />
           ))}
         </div>
+        <button className="mt-20 bg-[var(--background-color)] backdrop-blur lg:w-[30vw] py-3 rounded-full font-semibold hover:scale-105 transition duration-300 ease-in-out cursor-pointer active:scale-100">View More Products</button>
       </div>
     </section>
   );
