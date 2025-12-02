@@ -71,14 +71,14 @@ export default function Navbar() {
                                 asChild
                                 variant="outline"
                                 size="sm">
-                                <Link href="#">
+                                <Link href="/signup">
                                     <span>Signup</span>
                                 </Link>
                             </Button>
                             <Button
                                 asChild
                                 size="sm">
-                                <Link href="#">
+                                <Link href="/login">
                                     <span>Login</span>
                                 </Link>
                             </Button>
