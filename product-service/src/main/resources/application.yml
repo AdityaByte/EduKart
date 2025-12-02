@@ -1,25 +1,19 @@
 spring:
   application:
     name: product-service
-  datasource:
-      driver-class-name: org.postgresql.Driver
-      url: ${SUPABASE_JDBC_URL}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
 
 server:
-  port: 0
+  port: 8080
 
-eureka:
-  client:
-    service-url:
-      default-zone: http://localhost:8761
+#eureka:
+#  client:
+#    service-url:
+#      default-zone: http://localhost:8761
 
-supabase:
-  api:
-    url: ${SUPABASE_URL}
-    servicekey: ${SUPABASE_SERVICE_KEY}
-    bucketname: edukart-files
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}

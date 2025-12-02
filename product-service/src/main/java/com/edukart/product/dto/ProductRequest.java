@@ -10,9 +10,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Builder
 public class ProductRequest {
-    private String productId;
     private String name;
     private String description;
-    private String category;
+    private ProductCategory category;
     private BigDecimal price;
 }

@@ -2,172 +2,113 @@ package com.edukart.product.service;
 
 import com.edukart.product.dto.ProductRequest;
 import com.edukart.product.dto.ProductResponse;
-import com.edukart.product.enums.ProductCategory;
-import com.edukart.product.exceptions.FailedToDeleteFileException;
-import com.edukart.product.exceptions.ProductNotAvailableException;
+import com.edukart.product.model.File;
 import com.edukart.product.model.Product;
+import com.edukart.product.repository.FileRepository;
 import com.edukart.product.repository.ProductRepository;
+import com.edukart.product.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ProductService {
 
-    private final ProductRepository repository;
-    private final RestTemplate restTemplate;
-    @Value("${supabase.api.url}")
-    private String API_URL;
-    @Value("${supabase.api.servicekey}")
-    private String API_SERVICE_KEY;
-    @Value("${supabase.api.bucketname}")
-    private String BUCKET_NAME;
+    private final CloudinaryService cloudinaryService;
+    private final ProductRepository productRepository;
+    private final FileRepository fileRepository;
+    private final ReviewRepository reviewRepository;
 
-    public ResponseEntity<String> addProduct(ProductRequest productRequest, MultipartFile file) {
+    public Product addProduct(MultipartFile file, ProductRequest productRequest) {
         try {
-            Product product = Product
-                    .builder()
-                    .productId(UUID.randomUUID().toString())
-                    .name(productRequest.getName())
-                    .description(productRequest.getDescription())
-                    .price(productRequest.getPrice())
-                    .category(ProductCategory.valueOf(productRequest.getCategory()))
-                    .filename(file.getOriginalFilename())
-                    .build();
+            Product product = mapToProduct(productRequest);
 
-            // Since we have to make a POST request to the Supabase Database for storing the file.
-            ResponseEntity<String> responseFromSupabase = saveFileToSupabase(file);
-            if (responseFromSupabase.getStatusCode().is2xxSuccessful()) {
-                // If the file is successfully saved to the db
-                // Then we have to save the metadata of the file too
-                repository.save(product);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body("Product saved successfully");
-            }
+            // Calling cloudinary service for uploading the file.
+            File fileModel = cloudinaryService.uploadFile(file);
+            fileModel.setId(new ObjectId().toHexString());
+            fileModel.setProduct(product);
 
-            return responseFromSupabase;
+            product.setFile(fileModel);
 
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new RuntimeException("Failed to add product! Try again later.");
+            // Saving the file
+            productRepository.save(product);
+            fileRepository.save(fileModel);
+
+            return product;
+        } catch (IOException exception) {
+            throw new RuntimeException("Unable to upload the file," + exception.getMessage());
         }
     }
 
-    private ResponseEntity<String> saveFileToSupabase(MultipartFile file) throws IOException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("apikey", API_SERVICE_KEY);
-        headers.set("Authorization", "Bearer " + API_SERVICE_KEY);
-        headers.setContentType(MediaType.parseMediaType(file.getContentType()));
-
-        HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                API_URL + "/storage/v1/object/" + BUCKET_NAME + "/" + file.getOriginalFilename(),
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
-
-        return response;
+    private Product mapToProduct(ProductRequest productRequest) {
+        return Product
+                .builder()
+                .id(new ObjectId().toHexString())
+                .name(productRequest.getName())
+                .description(productRequest.getDescription())
+                .price(productRequest.getPrice())
+                .category(productRequest.getCategory())
+                .build();
     }
 
-    public List<ProductResponse> getProducts() {
-        List<Product> products = repository.findAll();
-        if (products.isEmpty()) {
-            return Collections.emptyList();
+    public void removeProduct(String productId) {
+        productRepository.deleteById(productId);
+        // Since after deleting the product we also need to delete the reviews and the files associated to it too.
+        fileRepository
+                .findByProductId(productId)
+                .ifPresent(file -> {
+                    // Here we need to remove the file from the cloudinary too.
+                    try {
+                        cloudinaryService.removeFile(file.getPublicId(), file.getResourceType());
+                    } catch (IOException exception) {
+                        throw new RuntimeException("Failed to remove the file from cloudinary, " + exception.getMessage());
+                    } finally {
+                        // Along with that we need to remove the file from the db too.
+                        fileRepository.delete(file);
+                    }
+                });
+        // Along with that we need to remove the reviews too.
+        reviewRepository.deleteByProductId(productId);
+    }
+
+    public List<ProductResponse> fetchAllProduct() {
+        List<Product> products = productRepository.findAll();
+        if (!products.isEmpty()) {
+            return mapToListOfProductResponse(products);
         }
-        return products.stream()
-                .map(product -> ProductResponse.builder()
-                        .productId(product.getProductId())
-                        .name(product.getName())
-                        .description(product.getDescription())
-                        .category(product.getCategory())
-                        .price(product.getPrice())
-                        .build())
-                .toList();
+        return Collections.emptyList();
     }
 
-    public List<ProductResponse> getProductByIds(List<String> skuCodes) {
-        List<Product> foundProducts = repository.findByProductIdIn(skuCodes);
-
-        if (foundProducts.size() != skuCodes.size()) {
-            // Using set so that no duplicate id should be present.
-            Set<String> foundIds = foundProducts
-                    .stream()
-                    .map(Product::getProductId)
-                    .collect(Collectors.toSet());
-
-            List<String> missingIds = skuCodes
-                    .stream()
-                    .filter(id -> !foundIds.contains(id))
-                    .toList();
-
-            throw new ProductNotAvailableException("Products are not in stock of product ids: " + missingIds.toString());
-        }
-
-        return mapToProductResponse(foundProducts);
+    public ProductResponse fetchProduct(String productId) {
+        return (ProductResponse) productRepository.findById(productId)
+                .map(product -> mapToListOfProductResponse(List.of(product)))
+                .orElse(null);
     }
 
-    public void updateProduct(ProductRequest productRequest) {
-        repository.findById(productRequest.getProductId())
-                .map(existingProduct -> {
-                    existingProduct.setName(productRequest.getName());
-                    existingProduct.setDescription(productRequest.getDescription());
-                    existingProduct.setCategory(ProductCategory.valueOf(productRequest.getCategory()));
-                    return repository.save(existingProduct);
-                })
-                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productRequest.getProductId() ));
-    }
-
-    public void deleteProduct(String id) {
-        // Firstly we need to fetch the product via the productId
-        Optional<String> filename = repository.findById(id)
-                .map(product -> Optional.of(product.getFilename()))
-                .orElse(Optional.empty());
-
-        filename.ifPresent(fn -> {
-            // If the filename exists like we fetched out the file in that case we need to send the delete request
-            // to the supabase database
-            ResponseEntity<Void> deleteRequestRespose = deleteFileFromStorage(fn);
-            if (deleteRequestRespose.getStatusCode().is2xxSuccessful()) {
-                repository.deleteById(id);
-            } else {
-                throw new FailedToDeleteFileException("Failed to delete the file from the database");
-            }
-        });
-    }
-
-    private ResponseEntity<Void> deleteFileFromStorage(String filename) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("apikey", API_SERVICE_KEY);
-        headers.set("Authorization", "Bearer " + API_SERVICE_KEY);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        String url = String.format("%s/storage/v1/object/%s/%s", API_URL, BUCKET_NAME, filename);
-
-        return restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class);
-    }
-
-    private List<ProductResponse> mapToProductResponse(List<Product> products) {
-        return products.stream()
+    private List<ProductResponse> mapToListOfProductResponse(List<Product> products) {
+        return products
+                .stream()
                 .map(product -> ProductResponse
                         .builder()
-                        .productId(product.getProductId())
+                        .id(product.getId())
                         .name(product.getName())
-                        .category(product.getCategory())
+                        .description(product.getDescription())
                         .price(product.getPrice())
-                        .build())
+                        .category(product.getCategory()).build())
                 .toList();
     }
 
+    public List<ProductResponse> fetchProductByIds(List<String> productIds) {
+        List<Product> products = productRepository.findAllById(productIds);
+        return mapToListOfProductResponse(products);
+    }
 }

@@ -1,6 +1,5 @@
 package com.edukart.product.model;
 
-import com.edukart.product.enums.ProductCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,29 +9,24 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-@Document(collection = "products")
-public class Product {
-
+@Document(collection = "files")
+public class File {
     @Id
     private String id;
 
-    private String name;
-    private String description;
-    private ProductCategory category;
+    @Field(name = "secure_url")
+    private String secureUrl;
 
-    private BigDecimal price;
+    @Field(name = "public_id")
+    private String publicId;
+
+    @Field(name = "resource_type")
+    private String resourceType; // zip, image or anything.
 
     @DBRef
-    private File file;
-
-    // One-to-Many relationship.
-    @DBRef
-    private List<Review> reviews;
+    private Product product;
 }

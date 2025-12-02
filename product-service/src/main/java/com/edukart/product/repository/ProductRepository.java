@@ -1,10 +1,9 @@
 package com.edukart.product.repository;
 
+import com.edukart.product.dto.ProductRequest;
 import com.edukart.product.model.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
-public interface ProductRepository extends JpaRepository<Product, String> {
-    List<Product> findByProductIdIn(List<String> productIds);
+public interface ProductRepository extends MongoRepository<Product, String> {
 }
