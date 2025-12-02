@@ -25,7 +25,9 @@ public class Review {
     private int rating;
     private String comment;
 
-    @CreatedDate
+    // Note: Enable mongo-auditing annotation along with don't insert id manually,
+    // this will work only when the id is null.
+    // @CreatedDate
     @Field(name = "created_at")
     private LocalDateTime createdAt;
 

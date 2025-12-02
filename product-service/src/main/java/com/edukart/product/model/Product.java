@@ -1,6 +1,7 @@
 package com.edukart.product.model;
 
 import com.edukart.product.enums.ProductCategory;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -34,5 +36,5 @@ public class Product {
 
     // One-to-Many relationship.
     @DBRef
-    private List<Review> reviews;
+    private List<Review> reviews = new ArrayList<>();
 }

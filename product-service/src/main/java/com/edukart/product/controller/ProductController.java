@@ -20,7 +20,7 @@ public class ProductController {
     private final ProductService productService;
 
     @ResponseBody
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Product addProduct(
             @RequestPart("product")
@@ -53,5 +53,4 @@ public class ProductController {
         productService.removeProduct(id);
         return "Product has been deleted";
     }
-
 }
