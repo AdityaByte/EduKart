@@ -1,14 +1,15 @@
 "use client";
 
 import HeroSection from "@/components/hero-section";
-import { SoftGradientBackground } from "@/components/ui/gradient-bg";
-
+import LatestProductSection from "@/components/latest-product-section";
+import Testimonials from "@/components/testimonials";
 
 const page = () => {
   return (
-    <div className="relative">
-      <SoftGradientBackground />
+    <div>
       <HeroSection />
+      <LatestProductSection />
+      <Testimonials />
     </div>
   );
 }
