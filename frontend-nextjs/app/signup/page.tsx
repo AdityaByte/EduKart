@@ -26,11 +26,11 @@ export default function SignupPage() {
     });
 
     const { signup, loginWithGoogle } = useAuth();
-    const [ loading, setLoading ] = React.useState<boolean>(false);
+    const [loading, setLoading] = React.useState<boolean>(false);
     const router = useRouter();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         setData((prev) => ({
             ...prev!,
             [name]: value
@@ -54,13 +54,18 @@ export default function SignupPage() {
         setLoading(true);
         try {
 
-            if (data.email.trim() === "" || data.password.trim() === "") {
+            const firstname = data.firstname.trim();
+            const lastname = data.lastname.trim();
+            const email = data.email.trim();
+            const password = data.password.trim();
+
+            if (firstname === "" || lastname === "" || email === "" || password === "") {
                 console.error("Fields cannot be empty");
                 setLoading(false);
                 return;
             }
 
-            await signup(data.email, data.password);
+            await signup(email, password, `${firstname} ${lastname}`);
             router.push("/dashboard");
         } catch (error: any) {
             console.error(`Signup failed: ${error.message}`);

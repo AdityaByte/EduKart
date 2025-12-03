@@ -6,6 +6,9 @@ import { Logo } from '@/components/logo'
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { toast } from "sonner";
 
 const menuItems = [
     { name: 'Home', href: '/' },
@@ -18,6 +21,12 @@ export default function Navbar() {
 
     const [menuState, setMenuState] = React.useState(false)
     const pathname = usePathname();
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        await logout();
+        toast("Logout successfull");
+    }
 
     return (<header>
         <nav
@@ -67,22 +76,59 @@ export default function Navbar() {
                         </div>
 
                         <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
-                            <Button
-                                asChild
-                                variant="outline"
-                                size="sm">
-                                <Link href="/signup">
-                                    <span>Signup</span>
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                size="sm">
-                                <Link href="/login">
-                                    <span>Login</span>
-                                </Link>
-                            </Button>
+                            {user != null ? <>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="rounded-full cursor-pointer"
+                                    size="sm">
+                                    <Avatar className="size-10">
+                                        <AvatarImage
+                                            src="https://tailus.io/images/reviews/shekinah.webp"
+                                            alt={user?.displayName ?? ""}
+                                            height="200"
+                                            width="200"
+                                            loading="lazy"
+                                        />
+                                        <AvatarFallback>
+                                            {(() => {
+                                                if (!user?.displayName) return "AP"; // fallback initials
+                                                const names = user.displayName.split(" ");
+                                                const firstInitial = names[0]?.[0] ?? "";
+                                                const secondInitial = names[1]?.[0] ?? "";
+                                                return `${firstInitial}${secondInitial}` || "AP";
+                                            })()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                                <Button
+                                    onClick={handleLogout}
+                                    className="cursor-pointer"
+                                    size="sm">
+                                        Logout
+                                </Button>
+                            </> : <>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer">
+                                    <Link href="/signup">
+                                        <span>Signup</span>
+                                    </Link>
+                                </Button>
+                                <Button
+                                    asChild
+                                    size="sm"
+                                    className="cursor-pointer">
+                                    <Link href="/login">
+                                        <span>Login</span>
+                                    </Link>
+                                </Button>
+                            </>}
                         </div>
+
+
                     </div>
                 </div>
             </div>
