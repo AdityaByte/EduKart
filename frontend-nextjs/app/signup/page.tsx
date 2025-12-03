@@ -1,14 +1,78 @@
+"use client";
+
 import { LogoIcon } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/context/AuthContext'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import React from 'react'
 
 export default function SignupPage() {
+
+    type signupDataType = {
+        firstname: string;
+        lastname: string;
+        email: string;
+        password: string;
+    }
+
+    const [data, setData] = React.useState<signupDataType>({
+        firstname: "",
+        lastname: "",
+        email: "",
+        password: "",
+    });
+
+    const { signup, loginWithGoogle } = useAuth();
+    const [ loading, setLoading ] = React.useState<boolean>(false);
+    const router = useRouter();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setData((prev) => ({
+            ...prev!,
+            [name]: value
+        }));
+    }
+
+    const handleSignupWithGoogle = async () => {
+        try {
+            setLoading(true);
+            await loginWithGoogle();
+            router.push("/dashboard")
+        } catch (error: any) {
+            console.error(`Signup with google failed, ${error.message}`)
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleEmailSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+
+            if (data.email.trim() === "" || data.password.trim() === "") {
+                console.error("Fields cannot be empty");
+                setLoading(false);
+                return;
+            }
+
+            await signup(data.email, data.password);
+            router.push("/dashboard");
+        } catch (error: any) {
+            console.error(`Signup failed: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <section className="flex min-h-screen bg-zinc-50 px-4 py-16 dark:bg-transparent">
             <form
-                action=""
+                onSubmit={handleEmailSignup}
                 className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]">
                 <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
                     <div className="text-center">
@@ -28,9 +92,10 @@ export default function SignupPage() {
                                 <Label
                                     htmlFor="firstname"
                                     className="block text-sm">
-                                    Firstname
+                                    firstname
                                 </Label>
                                 <Input
+                                    onChange={handleChange}
                                     type="text"
                                     required
                                     name="firstname"
@@ -41,7 +106,7 @@ export default function SignupPage() {
                                 <Label
                                     htmlFor="lastname"
                                     className="block text-sm">
-                                    Lastname
+                                    lastname
                                 </Label>
                                 <Input
                                     type="text"
@@ -59,6 +124,7 @@ export default function SignupPage() {
                                 Username
                             </Label>
                             <Input
+                                onChange={handleChange}
                                 type="email"
                                 required
                                 name="email"
@@ -75,15 +141,16 @@ export default function SignupPage() {
                                 </Label>
                             </div>
                             <Input
+                                onChange={handleChange}
                                 type="password"
                                 required
-                                name="pwd"
-                                id="pwd"
+                                name="password"
+                                id="password"
                                 className="input sz-md variant-mixed"
                             />
                         </div>
 
-                        <Button className="w-full">Sign In</Button>
+                        <Button type="submit" className="w-full" disabled={loading}>Sign In</Button>
                     </div>
 
                     <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -95,7 +162,8 @@ export default function SignupPage() {
                     <div className="grid grid-cols-2 gap-3">
                         <Button
                             type="button"
-                            variant="outline">
+                            variant="outline"
+                            onClick={handleSignupWithGoogle}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="0.98em"

@@ -5,8 +5,9 @@ import "./globals.css";
 import { SoftGradientBackground } from "@/components/ui/gradient-bg";
 import FooterSection from "@/components/footer";
 import { usePathname } from "next/navigation";
+import { AuthProvider } from "@/context/AuthContext";
 
-export default function AppLayout({children}: {children: React.ReactNode}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname();
 
@@ -16,10 +17,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
       <body cz-shortcut-listen="true" className="relative">
-        {!shouldHideLayout && <SoftGradientBackground />}
-        {!shouldHideLayout && <Navbar />}
-        <main>{children}</main>
-        {!shouldHideLayout && <FooterSection />}
+        <AuthProvider>
+          {!shouldHideLayout && <SoftGradientBackground />}
+          {!shouldHideLayout && <Navbar />}
+          <main>{children}</main>
+          {!shouldHideLayout && <FooterSection />}
+        </AuthProvider>
       </body>
     </html>
   )
