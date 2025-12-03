@@ -1,14 +1,76 @@
+"use client";
+
 import { LogoIcon } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/context/AuthContext'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import React from 'react'
 
 export default function LoginPage() {
+
+    type loginDataType = {
+        email: string;
+        password: string;
+    }
+
+    const [ data, setData ] = React.useState<loginDataType>({
+        email: "",
+        password: ""
+    });
+    const { loginWithGoogle, login } = useAuth();
+    const [ loading, setLoading ] = React.useState<boolean>(false);
+    const router = useRouter();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setData((prev) => ({
+            ...prev!,
+            [name]: value,
+        }))
+    }
+
+    const handleLoginWithEmailPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        // Checking the fields would not be empty.
+        setLoading(true);
+
+        if (data.email.trim() === "" || data.password.trim() === "") {
+            console.error("Fields cannot be empty");
+            setLoading(false);
+            return;
+        }
+
+        // Here we need to login.
+        try {
+            await login(data.email, data.password);
+            router.push("/dashboard");
+        } catch (error: any) {
+            console.error(`Failed to login, ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleLoginWithGoogle = async () => {
+        try {
+            setLoading(true);
+            await loginWithGoogle();
+            router.push("/dashboard");
+        } catch (error: any) {
+            console.error(`Failed to login by google, ${error.message}`)
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <section className="flex min-h-screen bg-zinc-50 px-4 dark:bg-transparent">
             <form
-                action=""
+                onSubmit={handleLoginWithEmailPassword}
                 className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]">
                 <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
                     <div className="text-center">
@@ -34,13 +96,14 @@ export default function LoginPage() {
                                 required
                                 name="email"
                                 id="email"
+                                onChange={handleChange}
                             />
                         </div>
 
                         <div className="space-y-0.5">
                             <div className="flex items-center justify-between">
                                 <Label
-                                    htmlFor="pwd"
+                                    htmlFor="password"
                                     className="text-sm">
                                     Password
                                 </Label>
@@ -58,13 +121,14 @@ export default function LoginPage() {
                             <Input
                                 type="password"
                                 required
-                                name="pwd"
-                                id="pwd"
+                                name="password"
+                                id="password"
                                 className="input sz-md variant-mixed"
+                                onChange={handleChange}
                             />
                         </div>
 
-                        <Button className="w-full">Log In</Button>
+                        <Button type="submit" className="w-full" disabled={loading}>Log In</Button>
                     </div>
 
                     <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -75,6 +139,7 @@ export default function LoginPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <Button
+                            onClick={handleLoginWithGoogle}
                             type="button"
                             variant="outline">
                             <svg
