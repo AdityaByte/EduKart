@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { toast } from "sonner";
 import ProfileMenu from "./profile-menu";
 import CartButton from "./ui/cart-button";
+import SearchInput from "./ui/search-input";
 
 const menuItems = [
     { name: 'Home', href: '/' },
@@ -21,9 +22,10 @@ const menuItems = [
 
 export default function Navbar() {
 
-    const [menuState, setMenuState] = React.useState(false)
+    const [menuState, setMenuState] = React.useState<boolean>(false);
     const pathname = usePathname();
     const { user, logout } = useAuth();
+    const [searchOpen, setSearchOpen] = React.useState<boolean>(false);
 
     const handleLogout = async () => {
         await logout();
@@ -54,8 +56,8 @@ export default function Navbar() {
                     </div>
 
                     <div className="bg-white/5 backdrop-blur-xl in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-                        <div className="lg:pr-4">
-                            <ul className="space-y-6 text-base lg:flex lg:gap-8 lg:space-y-0 lg:text-sm">
+                        <div className="lg:pr-4 flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-10">
+                            {!searchOpen && <ul className="space-y-6 text-base lg:flex lg:gap-8 lg:space-y-0 lg:text-sm">
                                 {menuItems.map((item, index) => {
 
                                     const isActive = pathname === item.href;
@@ -74,7 +76,8 @@ export default function Navbar() {
                                         </Link>
                                     </li>)
                                 })}
-                            </ul>
+                            </ul>}
+                            <SearchInput searchOpen={searchOpen} setSearchOpen={setSearchOpen} />
                         </div>
 
                         <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
