@@ -9,8 +9,10 @@ import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class OrderRequest {
-    private String productID;
+@NoArgsConstructor
+public class CartResponse {
+    private String id;
+    private List<CartItem> cartItemList;
 }
+

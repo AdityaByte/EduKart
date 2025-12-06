@@ -1,140 +1,127 @@
 package com.edukart.order.service;
 
-import com.edukart.order.dto.CartRequest;
-import com.edukart.order.dto.ItemRequest;
-import com.edukart.order.dto.OrderRequest;
-import com.edukart.order.dto.ProductResponse;
+import com.edukart.order.dto.*;
 import com.edukart.order.enums.OrderStatus;
-import com.edukart.order.event.Message;
-import com.edukart.order.exceptions.ProductNotAvailableException;
 import com.edukart.order.model.Order;
 import com.edukart.order.model.OrderLineItem;
 import com.edukart.order.repository.OrderRepository;
-import com.edukart.order.util.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OrderService {
 
-    private final Utility utility;
     private final RestTemplate restTemplate;
     private final OrderRepository orderRepository;
-    private final KafkaTemplate<String, Message> kafkaTemplate;
 
-    public String placeOrder(List<OrderRequest> orderRequests, String email) {
-
-        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder
-                .fromUriString("http://product-service/api/product/ids");
-
-        orderRequests.stream()
-                .filter(orderRequest -> !orderRequest.getSkuCode().isEmpty())
-                .forEach(item -> uriComponentsBuilder.queryParam("skuCode", item.getSkuCode()));
-
-        URI uri = uriComponentsBuilder.build().toUri();
-
-        ResponseEntity<List<ProductResponse>> response = restTemplate.exchange(
-                uri,
+    public OrderResponse placeOrder(String userID) {
+        // Here we need to make a synchronous request to the cart-service for fetching out the cart-details.
+        ResponseEntity<CartResponse> cartResponse = restTemplate.exchange(
+                "http://localhost:8083/api/cart/{id}",
                 HttpMethod.GET,
-                HttpEntity.EMPTY,
-                new ParameterizedTypeReference<List<ProductResponse>>() {
-                }
-        );
+                null,
+                CartResponse.class,
+                userID);
 
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new ProductNotAvailableException(Objects.requireNonNull(response.getBody().toString()));
+        if (!cartResponse.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to place the order because no cart was found, " + cartResponse.getBody());
         }
 
-        List<OrderLineItem> orderLineItemList = mapToOrderLineItem(Objects.requireNonNull(response.getBody()));
-        Order order = Order.builder()
-                .orderId(utility.generateOrderId())
-                .orderLineItemList(orderLineItemList)
-                .orderStatus(OrderStatus.PENDING)
+        // Else we need to validate the items are exists or not.
+        // And gets the product details.
+
+        // Communicating with the product service for validating the cart-items are valid or not.
+        List<String> productIds = cartResponse.getBody().getCartItemList()
+                .stream()
+                .map(CartItem::getProductID)
+                .toList();
+
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromUriString("http://localhost:8081/api/product/ids")
+                .queryParam("id", productIds);
+
+        ResponseEntity<List<ProductResponse>> productResponse = restTemplate
+                .exchange(
+                        builder.toUriString(),
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<List<ProductResponse>>() {}
+                );
+
+        if (!productResponse.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to get the valid product response, " + productResponse.getBody());
+        }
+
+        List<ProductResponse> productResponseList = productResponse.getBody();
+
+        // Now we have to make the order and do all the necessary things.
+        Order order = Order
+                .builder()
+                .userID(userID)
+                .totalAmount(productResponseList.stream()
+                        .map(ProductResponse::getPrice)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add))
                 .build();
 
-        // When we get the order we need to send the request to the payment-service.
-        String sessionURL = makePaymentRequest(order);
-        if (sessionURL.isEmpty()) {
-            return null;
-        }
+        List<OrderLineItem> orderLineItems = mapToOrderLineItem(productResponseList, order);
+        order.setOrderLineItems(orderLineItems);
 
-        kafkaTemplate.send("notification.message", Message.builder()
-                        .destination(email)
-                        .subject("Make Payment to the URL")
-                        .message(String.format("Open this URL and make payment:\n%s\nWith Regards - EduKart", sessionURL))
-                        .build());
+        order = orderRepository.save(order);
 
-        // Else we need to forward the URL to client.
-        return sessionURL;
-    }
-
-    // Payment request must be synchronous.
-    private String makePaymentRequest(Order order) {
-        CartRequest cartRequest = mapToCartRequest(order);
-        // Now I have to send the request to the payment service
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<CartRequest> entity = new HttpEntity<>(cartRequest, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                "http://payment-gateway/api/payment",
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            log.error("Payment gateway response message: {}", response.getBody());
-            return null;
-        }
-        return response.getBody();
-    }
-
-    private CartRequest mapToCartRequest(Order order){
-        return CartRequest
+        // Now we have to call to the payment service for payment.
+        PaymentRequest paymentRequest = PaymentRequest
                 .builder()
-                .orderId(order.getOrderId())
-                .items(order.getOrderLineItemList()
-                        .stream()
-                        .map(orderLineItem -> ItemRequest
-                                .builder()
-                                .id(orderLineItem.getSkuCode())
-                                .name(orderLineItem.getName())
-                                .amount(orderLineItem.getPrice().longValueExact())
-                                .quantity(1L)
-                                .build()
-                        )
-                        .toList()
-                ).build();
+                .orderID(order.getId())
+                .userID(userID)
+                .amount(order.getTotalAmount())
+                .currency("INR")
+                .returnURL("http://localhost:8080/api/order/" + order.getId() + "/success")
+                .build();
+
+        PaymentResponse paymentResponse = restTemplate
+                .postForObject(
+                        "http://localhost:8082/api/payment",
+                        paymentRequest,
+                        PaymentResponse.class
+                );
+
+        assert paymentResponse != null;
+        if (paymentResponse.getStatus().equals("FAILURE")) {
+            throw new RuntimeException("Failed to generate the payment URI: " + paymentResponse.getMessage());
+        }
+
+        return OrderResponse
+                .builder()
+                .orderID(order.getId())
+                .status(OrderStatus.PENDING.name())
+                .paymentURL(paymentResponse.getPaymentURL())
+                .totalAmount(order.getTotalAmount())
+                .build();
     }
 
-
-
-    private List<OrderLineItem> mapToOrderLineItem(List<ProductResponse> productResponses) {
-        return productResponses
+    private List<OrderLineItem> mapToOrderLineItem(List<ProductResponse> productResponseList, Order order) {
+        return productResponseList
                 .stream()
-                .map(productResponse -> OrderLineItem
-                        .builder()
-                        .orderId(utility.generateOrderId())
-                        .skuCode(productResponse.getProductId())
-                        .name(productResponse.getName())
-                        .price(productResponse.getPrice())
-                        .build())
+                .map(productResponse -> {
+                    return OrderLineItem.builder()
+                            .order(order)
+                            .productName(productResponse.getName())
+                            .productID(productResponse.getProductId())
+                            .productCategory(productResponse.getCategory())
+                            .productPrice(productResponse.getPrice())
+                            .build();
+                })
                 .toList();
     }
 

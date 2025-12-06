@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Builder
 @Data
-@NoArgsConstructor
+@Builder
 @AllArgsConstructor
-public class ProductResponse {
-    private String productId;
-    private String name;
-    private ProductCategory category;
-    private BigDecimal price;
+@NoArgsConstructor
+public class CartItem {
+    private String productID;
+    private String productName;
+    private ProductCategory productCategory;
+    private BigDecimal productPrice;
 }

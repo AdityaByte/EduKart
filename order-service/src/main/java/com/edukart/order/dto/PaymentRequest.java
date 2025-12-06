@@ -6,15 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderResponse {
+public class PaymentRequest {
     private String orderID;
-    private BigDecimal totalAmount;
-    private String paymentURL;
-    private String status;
+    private String userID;
+    private BigDecimal amount;
+    private String currency;
+    private String returnURL; // success/failure redirect URL.
+    private String description;
 }
