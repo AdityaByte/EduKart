@@ -1,4 +1,4 @@
-package com.edukart.order.dto;
+package com.edukart.cart.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,8 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartRequest {
-    private String orderId;
-    private List<ItemRequest> items;
+public class CartResponse {
+    private String id;
+    private List<CartItem> cartItemList;
 }
+

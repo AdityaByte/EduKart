@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -33,12 +34,13 @@ public class Cart {
     private List<CartItem> cartItemList = new ArrayList<>();
 
     public void addProduct(Product product) {
-        cartItemList
-                .forEach(cartItem -> {
-                    if (!cartItem.getProductID().equals(product.getId())) {
-                        cartItemList.add(new CartItem(this, product));
-                    }
-                });
+        boolean exists = cartItemList.stream()
+                .anyMatch(item -> item.getProductID().equals(product.getId()));
+
+        if (!exists) {
+            CartItem newItem = new CartItem(this, product);
+            cartItemList.add(newItem);
+        }
     }
 
     public void removeProduct(String productID) {

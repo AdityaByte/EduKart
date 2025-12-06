@@ -33,6 +33,7 @@ public class CartItem {
     private String productName;
 
     @Column(name = "product_category")
+    @Enumerated(EnumType.STRING)
     private ProductCategory productCategory;
 
     @Column(name = "product_price")

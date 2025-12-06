@@ -1,6 +1,7 @@
 package com.edukart.cart.controller;
 
 import com.edukart.cart.dto.AddCartRequest;
+import com.edukart.cart.dto.CartResponse;
 import com.edukart.cart.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,14 @@ public class CartController {
     public String handleRemoveFromCart(@RequestBody Map<String, String> deleteCartRequest) {
         cartService.removeFromCart(deleteCartRequest.get("userID"), deleteCartRequest.get("productID"));
         return "Item removed from cart successfully";
+    }
+
+    @GetMapping("/{id}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    public CartResponse handleGetCart(@PathVariable("id") String id) {
+        // Here we need to the find the cart as per the userid.
+        return cartService.fetchCart(id);
     }
 
 }
