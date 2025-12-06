@@ -1,100 +1,78 @@
 package com.edukart.payment.service;
 
-import com.edukart.payment.dto.Cart;
-import com.edukart.payment.dto.Item;
+import com.edukart.payment.dto.PaymentRequest;
 import com.edukart.payment.dto.PaymentResponse;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
-    @Value("${stripe.secretKey}")
+    @Value("${stripe.secret-key}")
     private String SECRET_KEY;
 
-    public PaymentResponse makePayment(Cart cart) {
+    @Value("${frontend.origin:http://localhost:3000}")
+    private String FRONTEND_ORIGIN;
 
+    public PaymentResponse makePayment(PaymentRequest paymentRequest) {
         Stripe.apiKey = SECRET_KEY;
 
-        List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
-
-        cart.getItems()
-                .stream()
-                .filter(item -> !item.getId().isEmpty())
-                .forEach(item -> {
-                    lineItems.add(createLineItem(item));
-                });
-
-        if (lineItems.isEmpty()) {
-            return PaymentResponse
-                    .builder()
-                    .status("FAILURE")
-                    .message("No item exists")
-                    .build();
-        }
-
-        SessionCreateParams params = SessionCreateParams
-                .builder()
-                .putAllMetadata(Map.of("orderId", cart.getOrderId()))
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:8080/payment/success?session_id={CHECKOUT_SESSION_ID}")
-                .setCancelUrl("http://localhost:8080/payment/cancel")
-                .addAllLineItem(lineItems)
+        SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
+                .setQuantity(1L)
+                .setPriceData(
+                        SessionCreateParams.LineItem.PriceData.builder()
+                                .setCurrency(paymentRequest.getCurrency())
+                                .setUnitAmount(paymentRequest
+                                        .getAmount()
+                                        .multiply(BigDecimal.valueOf(100))
+                                        .setScale(0, RoundingMode.UNNECESSARY)
+                                        .longValueExact())
+                                .setProductData(
+                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                .setName("Order #" + paymentRequest.getOrderID())
+                                                .build()
+                                )
+                                .build()
+                )
                 .build();
 
-        Session session = null;
+        SessionCreateParams params = SessionCreateParams.builder()
+                .addLineItem(lineItem)
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .putAllMetadata(Map.of(
+                        "orderID", paymentRequest.getOrderID(),
+                        "userID", paymentRequest.getUserID()
+                ))
+                .setSuccessUrl(FRONTEND_ORIGIN + "/order/success?orderID=" + paymentRequest.getOrderID() + "&session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(FRONTEND_ORIGIN + "/order/fail?orderID=" + paymentRequest.getOrderID())
+                .build();
 
         try {
-            session = Session.create(params);
+            Session session = Session.create(params);
+            return PaymentResponse.builder()
+                    .status("SUCCESS")
+                    .message("Payment session created")
+                    .sessionID(session.getId())
+                    .paymentURL(session.getUrl())
+                    .build();
         } catch (StripeException ex) {
-            return  PaymentResponse
-                    .builder()
+            log.error("Stripe payment failed for order {}: {}", paymentRequest.getOrderID(), ex.getMessage());
+            return PaymentResponse.builder()
                     .status("FAILURE")
                     .message(ex.getLocalizedMessage())
                     .build();
         }
-
-        if (session == null) {
-            return PaymentResponse
-                    .builder()
-                    .status("FAILURE")
-                    .message("Session creation failed without exception")
-                    .build();
-        }
-
-        return PaymentResponse
-                .builder()
-                .status("SUCCESS")
-                .message("Payment session created")
-                .sessionId(session.getId())
-                .sessionUrl(session.getUrl())
-                .build();
-    }
-
-    private SessionCreateParams.LineItem createLineItem(Item item) {
-        SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData
-                .builder()
-                .setName(item.getName())
-                .build();
-        SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData
-                .builder()
-                .setUnitAmount(item.getAmount() * 100) // Price would be in rupee so multiplying it by 100 would make it rupee cause it accept the minimum unit.
-                .setCurrency("INR")
-                .setProductData(productData)
-                .build();
-        SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
-                .setQuantity(item.getQuantity() != null ? item.getQuantity() : 1L)
-                .setPriceData(priceData)
-                .build();
-
-        return lineItem;
     }
 }

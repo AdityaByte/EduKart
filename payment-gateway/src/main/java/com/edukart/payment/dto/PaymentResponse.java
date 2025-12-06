@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class PaymentResponse {
     private String status;
     private String message;
-    private String sessionId;
-    private String sessionUrl;
+    private String sessionID;
+    private String paymentURL;
 }
