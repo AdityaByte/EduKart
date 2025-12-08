@@ -17,10 +17,10 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @GetMapping("/{userID}")
+    @PostMapping
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public OrderResponse placeOrder(@PathVariable("userID") String userID) {
+    public OrderResponse placeOrder(@RequestHeader("X-Auth-UID") String userID) {
         return orderService.placeOrder(userID);
     }
 }

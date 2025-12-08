@@ -39,5 +39,5 @@ public class Review {
     // This review belongs to which user.
     // Since we are handling the user end at the firebase so don't have the access of that.
     // So we are just saving the username.
-    private String user;
+    private String userID;
 }

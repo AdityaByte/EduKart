@@ -2,7 +2,6 @@ package com.edukart.product.service;
 
 import com.edukart.product.dto.ReviewRequest;
 import com.edukart.product.dto.ReviewResponse;
-import com.edukart.product.model.Product;
 import com.edukart.product.model.Review;
 import com.edukart.product.repository.ProductRepository;
 import com.edukart.product.repository.ReviewRepository;
@@ -22,12 +21,12 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
 
-    public void addReview(ReviewRequest reviewRequest) {
+    public void addReview(String userID, ReviewRequest reviewRequest) {
         // Finding the product.
         productRepository.findById(reviewRequest.getProductId())
                 .ifPresentOrElse(product -> {
                     // When the product is present we need to add a review.
-                    Review review = mapToReview(reviewRequest);
+                    Review review = mapToReview(userID, reviewRequest);
                     review.setProduct(product);
                     product.getReviews().add(review);
 
@@ -40,11 +39,11 @@ public class ReviewService {
                 });
     }
 
-    private Review mapToReview(ReviewRequest reviewRequest) {
+    private Review mapToReview(String userID, ReviewRequest reviewRequest) {
         return Review
                 .builder()
                 .id(new ObjectId().toHexString())
-                .user(reviewRequest.getUser())
+                .userID(userID)
                 .rating(reviewRequest.getRating())
                 .comment(reviewRequest.getComment())
                 .createdAt(LocalDateTime.now())
@@ -83,7 +82,7 @@ public class ReviewService {
                 .id(review.getId())
                 .rating(review.getRating())
                 .comment(review.getComment())
-                .user(review.getUser())
+                .userID(review.getUserID())
                 .productId(review.getProduct().getId())
                 .createdAt(review.getCreatedAt())
                 .build();

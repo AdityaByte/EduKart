@@ -25,8 +25,8 @@ public class ReviewController {
     @PostMapping
     @ResponseBody
     @ResponseStatus(HttpStatus.CREATED)
-    public String addReview(@RequestBody ReviewRequest reviewRequest) {
-        reviewService.addReview(reviewRequest);
+    public String addReview(@RequestHeader("X-Auth-UID") String userID, @RequestBody ReviewRequest reviewRequest) {
+        reviewService.addReview(userID, reviewRequest);
         return "Review added successfully";
     }
 

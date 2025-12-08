@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AddCartRequest {
-    private String userID;
     private String productID;
 }

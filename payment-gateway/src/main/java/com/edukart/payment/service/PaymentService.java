@@ -26,7 +26,7 @@ public class PaymentService {
     @Value("${frontend.origin:http://localhost:3000}")
     private String FRONTEND_ORIGIN;
 
-    public PaymentResponse makePayment(PaymentRequest paymentRequest) {
+    public PaymentResponse makePayment(String userID, PaymentRequest paymentRequest) {
         Stripe.apiKey = SECRET_KEY;
 
         SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()
@@ -53,7 +53,7 @@ public class PaymentService {
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .putAllMetadata(Map.of(
                         "orderID", paymentRequest.getOrderID(),
-                        "userID", paymentRequest.getUserID()
+                        "userID", userID
                 ))
                 .setSuccessUrl(FRONTEND_ORIGIN + "/order/success?orderID=" + paymentRequest.getOrderID() + "&session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(FRONTEND_ORIGIN + "/order/fail?orderID=" + paymentRequest.getOrderID())

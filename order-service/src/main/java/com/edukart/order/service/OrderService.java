@@ -8,8 +8,7 @@ import com.edukart.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,12 +26,16 @@ public class OrderService {
 
     public OrderResponse placeOrder(String userID) {
         // Here we need to make a synchronous request to the cart-service for fetching out the cart-details.
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-UID", userID);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         ResponseEntity<CartResponse> cartResponse = restTemplate.exchange(
-                "http://localhost:8083/api/cart/{id}",
+                "http://localhost:8083/api/cart",
                 HttpMethod.GET,
-                null,
-                CartResponse.class,
-                userID);
+                entity,
+                CartResponse.class);
 
         if (!cartResponse.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException("Failed to place the order because no cart was found, " + cartResponse.getBody());
@@ -89,10 +92,14 @@ public class OrderService {
                 .returnURL("http://localhost:8080/api/order/" + order.getId() + "/success")
                 .build();
 
+        HttpHeaders headers1 = new HttpHeaders();
+        headers1.set("X-Auth-UID", userID);
+        headers1.setContentType(MediaType.APPLICATION_JSON);
+
         PaymentResponse paymentResponse = restTemplate
                 .postForObject(
                         "http://localhost:8082/api/payment",
-                        paymentRequest,
+                        new HttpEntity<>(paymentRequest, headers1),
                         PaymentResponse.class
                 );
 

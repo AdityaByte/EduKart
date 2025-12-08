@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class PaymentRequest {
     private String orderID;
-    private String userID;
     private BigDecimal amount;
     private String currency;
     private String returnURL; // success/failure redirect URL.

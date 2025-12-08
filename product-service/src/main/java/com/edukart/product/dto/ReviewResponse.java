@@ -17,5 +17,5 @@ public class ReviewResponse {
     private String comment;
     private LocalDateTime createdAt;
     private String productId;
-    private String user;
+    private String userID;
 }

@@ -19,7 +19,7 @@ public class PaymentController {
     @PostMapping
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    public PaymentResponse handlePayment(@RequestBody PaymentRequest paymentRequest) {
-        return paymentService.makePayment(paymentRequest);
+    public PaymentResponse handlePayment(@RequestHeader("X-Auth-UID") String userID, @RequestBody PaymentRequest paymentRequest) {
+        return paymentService.makePayment(userID, paymentRequest);
     }
 }
