@@ -32,7 +32,7 @@ public class OrderService {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         ResponseEntity<CartResponse> cartResponse = restTemplate.exchange(
-                "http://localhost:8083/api/cart",
+                "http://cart-service/api/cart",
                 HttpMethod.GET,
                 entity,
                 CartResponse.class);
@@ -51,7 +51,7 @@ public class OrderService {
                 .toList();
 
         UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUriString("http://localhost:8081/api/product/ids")
+                .fromUriString("http://product-service/api/product/ids")
                 .queryParam("id", productIds);
 
         ResponseEntity<List<ProductResponse>> productResponse = restTemplate
@@ -89,7 +89,7 @@ public class OrderService {
                 .userID(userID)
                 .amount(order.getTotalAmount())
                 .currency("INR")
-                .returnURL("http://localhost:8080/api/order/" + order.getId() + "/success")
+                .returnURL("http://order-service/api/order/" + order.getId() + "/success")
                 .build();
 
         HttpHeaders headers1 = new HttpHeaders();
@@ -98,7 +98,7 @@ public class OrderService {
 
         PaymentResponse paymentResponse = restTemplate
                 .postForObject(
-                        "http://localhost:8082/api/payment",
+                        "http://payment-service/api/payment",
                         new HttpEntity<>(paymentRequest, headers1),
                         PaymentResponse.class
                 );

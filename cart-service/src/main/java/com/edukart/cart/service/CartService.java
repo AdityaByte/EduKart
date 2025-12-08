@@ -31,7 +31,7 @@ public class CartService {
 
         // Here we need to first call the product service and fetch the product details as per the product id.
         ResponseEntity<List<Product>> response = restTemplate.exchange(
-                "http://localhost:8081/api/product/ids?id={id}",
+                "http://product-service/api/product/ids?id={id}",
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<List<Product>>() {},
@@ -56,6 +56,7 @@ public class CartService {
                         .orElseGet(() -> Cart
                                 .builder()
                                 .userID(userID)
+                                .cartItemList(new ArrayList<>())
                                 .build());
 
         cart.addProduct(product);

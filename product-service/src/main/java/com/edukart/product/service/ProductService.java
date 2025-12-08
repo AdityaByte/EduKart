@@ -101,6 +101,7 @@ public class ProductService {
                         .builder()
                         .id(product.getId())
                         .name(product.getName())
+                        .description(product.getDescription())
                         .price(product.getPrice())
                         .category(product.getCategory()).build())
                 .toList();
