@@ -20,7 +20,7 @@ export default function LoginPage() {
         email: "",
         password: ""
     });
-    const { loginWithGoogle, login } = useAuth();
+    const { token, loginWithGoogle, login } = useAuth();
     const [ loading, setLoading ] = React.useState<boolean>(false);
     const router = useRouter();
 
@@ -48,6 +48,7 @@ export default function LoginPage() {
         try {
             await login(data.email, data.password);
             router.push("/dashboard");
+            console.log(`Firebase token: ${token}`)
         } catch (error: any) {
             console.error(`Failed to login, ${error.message}`);
         } finally {

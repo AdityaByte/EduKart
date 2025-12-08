@@ -1,7 +1,7 @@
 "use client";
 
 import { auth, googleProvider } from "@/lib/firebase";
-import { User, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from "firebase/auth";
+import { User, createUserWithEmailAndPassword, onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from "firebase/auth";
 import React, { Children, ReactNode, createContext, useContext, useEffect } from "react";
 
 type AppUser = {
@@ -37,10 +37,11 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     const [token, setToken] = React.useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+        const unsubscribe = onIdTokenChanged(auth, async (firebaseUser: User | null) => {
             if (firebaseUser) {
 
                 const token = await firebaseUser.getIdToken();
+                console.log(`In context: ${token}`);
 
                 setUser({
                     uid: firebaseUser.uid,
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     }
 
     const logout = async () => {
-        
+
         return signOut(auth);
     }
 
