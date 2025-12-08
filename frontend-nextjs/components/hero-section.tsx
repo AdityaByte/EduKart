@@ -44,7 +44,7 @@ export default function HeroSection() {
                                     <Button
                                         size="lg"
                                         asChild>
-                                        <Link href="#">
+                                        <Link href="/dashboard">
                                             <Rocket className="relative size-4" />
                                             <span className="text-nowrap">Start Learning</span>
                                         </Link>

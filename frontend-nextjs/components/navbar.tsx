@@ -83,7 +83,7 @@ export default function Navbar() {
                         <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
                             {user != null ? <>
                                 <ProfileMenu />
-                                <CartButton />
+                                <Link href="/cart"><CartButton /></Link>
                             </> : <>
                                 <Button
                                     asChild
