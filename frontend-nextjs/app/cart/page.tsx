@@ -57,6 +57,32 @@ export default function Cart() {
         fetchCart();
     }, [backendURL, token]);
 
+    const handlePlaceOrder = async () => {
+        try {
+            const response = await fetch(`${backendURL}/api/order`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to place order, " + response.body);
+            }
+
+            const data = await response.json();
+
+            if (data.status !== "PENDING") {
+                throw new Error("Failed to generate the payment URL, " + data.status);
+            }
+
+            // Else we need to redirect the window to the payment URL.
+            window.location.href = data.paymentURL;
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
 
     return (
         <main className="overflow-hidden pt-10 pb-10">
@@ -95,7 +121,7 @@ export default function Cart() {
                             </div>
 
                             <div className="mt-10 border-t pt-6 flex justify-end">
-                                <Button size="lg" className="bg-green-700 text-white">
+                                <Button onClick={handlePlaceOrder} size="lg" className="bg-green-700 text-white cursor-pointer">
                                     Place Order
                                 </Button>
                             </div>
@@ -124,7 +150,7 @@ export default function Cart() {
                                 </div>
                             </div>
 
-                            <Button size="lg" className="w-full mt-6">
+                            <Button size="lg" className="w-full mt-6 cursor-pointer">
                                 Checkout Securely
                             </Button>
                         </div>
