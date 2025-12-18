@@ -1,6 +1,6 @@
 spring:
   application:
-    name: payment-gateway
+    name: payment-service
 
 eureka:
   client:
